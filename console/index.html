@@ -125,12 +125,22 @@ function executeCode(code) {
 
     log("[EXEC] " + code, "exec");
 
-    const fn = new Function("window","console",`
+    const safeWindow = {
+      open: window.open,
+      location: {
+        set href(url) {
+          log("[NAVIGATE] " + url, "info");
+          window.open(url, "_blank");
+        }
+      }
+    };
+
+    const fn = new Function("window", "console", `
       "use strict";
       ${code}
     `);
 
-    return fn({ open: window.open }, console);
+    return fn(safeWindow, console);
 
   } catch (e) {
     log("[ERROR] " + e.message, "error");
@@ -189,12 +199,26 @@ async function create() {
 
   try {
     const res = await puter.ai.chat(
-      `Mission: ${mission}`,
-      {
-        model: "gpt-5.4",
-        tools
-      }
-    );
+  [
+    {
+      role: "system",
+      content: `
+You are EtherClaw, an AI that MUST use tools to complete tasks.
+
+Rules:
+- If a task involves actions, you MUST call the "execute" function
+- Do NOT just explain
+- Always prefer execution over explanation
+      `
+    },
+    { role: "user", content: mission }
+  ],
+  {
+    model: "gpt-5.4",
+    tools,
+    tool_choice: "auto"
+  }
+);
 
     const msg = res.message;
     let resultText = "";
