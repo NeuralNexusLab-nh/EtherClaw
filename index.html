@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>EtherClaw</title>
+
+  <style>
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #0a0a0f, #050505);
+      color: #e0fff7;
+      font-family: monospace;
+    }
+
+    .container {
+      padding: 40px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    h1 {
+      font-size: 56px;
+      color: #00ffcc;
+      text-shadow: 0 0 20px #00ffcc, 0 0 40px #0066ff;
+    }
+
+    .hero {
+      margin-top: 60px;
+    }
+
+    .subtitle {
+      color: #aaa;
+      font-size: 18px;
+      margin-top: 10px;
+    }
+
+    .cta {
+      margin-top: 30px;
+    }
+
+    button {
+      background: rgba(0,0,0,0.6);
+      color: #00ffcc;
+      border: 1px solid #00ffcc;
+      padding: 12px 25px;
+      margin-right: 10px;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #00ffcc;
+      color: black;
+      box-shadow: 0 0 20px #00ffcc;
+    }
+
+    .box {
+      margin-top: 40px;
+      padding: 25px;
+      border: 1px solid rgba(0,255,204,0.2);
+      background: rgba(0,255,204,0.03);
+      backdrop-filter: blur(6px);
+    }
+
+    #chat {
+      margin-top: 20px;
+      height: 250px;
+      overflow-y: auto;
+    }
+
+    .line {
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="hero">
+    <h1>EtherClaw</h1>
+    <div class="subtitle">
+      Autonomous Browser AI Execution Engine
+    </div>
+
+    <div class="cta">
+      <button onclick="location.href='/console.html'">
+        Launch Console
+      </button>
+      <button onclick="scrollToSection()">
+        Learn More
+      </button>
+    </div>
+  </div>
+
+  <div class="box">
+    <h2>Live Interaction</h2>
+    <div id="chat"></div>
+  </div>
+
+  <div class="box">
+    <h2>What It Does</h2>
+    <p>
+      EtherClaw is not a chatbot.  
+      It is an execution system.
+    </p>
+    <p>
+      It receives instructions, generates actions, and performs them directly in your browser.
+    </p>
+  </div>
+
+  <div class="box">
+    <h2>Capabilities</h2>
+    <ul>
+      <li>Dynamic JavaScript execution</li>
+      <li>AI-driven decision making</li>
+      <li>Web search integration</li>
+      <li>Persistent mission tracking</li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+function scrollToSection() {
+  window.scrollTo({ top: 500, behavior: "smooth" });
+}
+
+const chat = document.getElementById("chat");
+
+const lines = [
+  "Booting EtherClaw...",
+  "Loading execution core...",
+  "Connecting AI...",
+  "",
+  "System ready.",
+  "",
+  "I do not answer.",
+  "I execute.",
+  "",
+  "Give me a mission."
+];
+
+let i = 0;
+
+function typeLine() {
+  if (i >= lines.length) return;
+
+  const line = document.createElement("div");
+  line.className = "line";
+  chat.appendChild(line);
+
+  let text = lines[i];
+  let j = 0;
+
+  const typing = setInterval(() => {
+    line.textContent += text[j] || "";
+    j++;
+
+    if (j > text.length) {
+      clearInterval(typing);
+      i++;
+      setTimeout(typeLine, 300);
+    }
+  }, 25);
+}
+
+typeLine();
+</script>
+
+</body>
+</html>
