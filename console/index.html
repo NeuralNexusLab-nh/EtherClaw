@@ -3,15 +3,17 @@
 <head>
   <title>EtherClaw Console</title>
   <script src="https://js.puter.com/v2/"></script>
+
   <style>
     body {
-      background: #000;
+      background: #050505;
       color: #00ff9f;
       font-family: monospace;
       padding: 20px;
     }
 
     h1 {
+      text-shadow: 0 0 10px #00ff9f;
       animation: glitch 1s infinite;
     }
 
@@ -26,163 +28,261 @@
       color: #00ff9f;
       border: 1px solid #00ff9f;
       padding: 8px;
+      transition: 0.2s;
+    }
+
+    button:hover {
+      background: #00ff9f;
+      color: black;
+      cursor: pointer;
     }
 
     #console {
       margin-top: 20px;
       border: 1px solid #00ff9f;
-      height: 200px;
+      height: 220px;
       overflow-y: auto;
       padding: 10px;
+      background: rgba(0,255,159,0.05);
     }
 
     #rsl {
       margin-top: 20px;
       white-space: pre-wrap;
+      border-left: 3px solid #00ff9f;
+      padding-left: 10px;
+    }
+
+    .scanline {
+      position: fixed;
+      width: 100%;
+      height: 2px;
+      background: rgba(0,255,159,0.2);
+      animation: scan 5s linear infinite;
+    }
+
+    @keyframes scan {
+      0% { top: 0; }
+      100% { top: 100%; }
     }
   </style>
 </head>
 
 <body>
-  <h1>EtherClaw Console</h1>
-  <h3>Create mission here, EtherClaw will execute it.</h3>
-  <input id="md" placeholder="Enter mission...">
-  <button onclick="create()">Execute</button>
-  <hr>
-  <p>$gt;_ Console</p>
-  <div id="console"></div>
-  <hr>
-  <p>Result</p>
-  <h3 id="rsl"></h3>
 
-  <script>
-    if (!puter.auth.isSignedIn()) {
-      window.location.href = '/auth.html';
+<div class="scanline"></div>
+
+<h1>EtherClaw Console</h1>
+<h3>Create mission. AI will execute it.</h3>
+
+<button onclick="location.href='/'">Home</button>
+<button onclick="puter.auth.signOut()">Sign out</button>
+
+<br><br>
+
+<input id="md" placeholder="Enter mission..." style="width:300px;">
+<button onclick="create()">Execute</button>
+
+<hr>
+
+<p>>_ Console</p>
+<div id="console"></div>
+
+<hr>
+
+<p>Result</p>
+<div id="rsl"></div>
+
+<script>
+if (!puter.auth.isSignedIn()) {
+  location.href = '/auth.html';
+}
+
+const logBox = document.getElementById("console");
+
+function log(msg, type="info") {
+  const colors = {
+    info: "#00ff9f",
+    exec: "#00ccff",
+    error: "#ff4444"
+  };
+
+  const line = document.createElement("div");
+  line.style.color = colors[type];
+  line.textContent = "> " + msg;
+
+  logBox.appendChild(line);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+// hijack console
+const originalLog = console.log;
+console.log = (...args) => {
+  log(args.join(" "));
+  originalLog(...args);
+};
+
+function saveMission(id, data) {
+  localStorage.setItem("mission_" + id, JSON.stringify(data));
+}
+
+function loadMission(id) {
+  return JSON.parse(localStorage.getItem("mission_" + id));
+}
+
+function generateID() {
+  return Math.random().toString(36).substring(2, 10);
+}
+
+function executeCode(code) {
+  try {
+    if (/^[A-Za-z0-9+/=]+$/.test(code)) {
+      code = atob(code);
     }
 
-    const logBox = document.getElementById("console");
+    log("[EXEC] " + code, "exec");
 
-    function log(msg) {
-      logBox.innerHTML += "> " + msg + "<br>";
-      logBox.scrollTop = logBox.scrollHeight;
-    }
+    const fn = new Function("window","console",`
+      "use strict";
+      ${code}
+    `);
 
-    // hook console.log
-    const originalLog = console.log;
-    console.log = (...args) => {
-      log(args.join(" "));
-      originalLog(...args);
-    };
+    return fn({ open: window.open }, console);
 
-    function saveMission(id, data) {
-      localStorage.setItem("mission_" + id, JSON.stringify(data));
-    }
+  } catch (e) {
+    log("[ERROR] " + e.message, "error");
+    return e.message;
+  }
+}
 
-    function loadMission(id) {
-      return JSON.parse(localStorage.getItem("mission_" + id));
-    }
-
-    function generateID() {
-      return Math.random().toString(36).substring(2, 10);
-    }
-
-    function executeCode(code) {
-      try {
-        // base64 decode
-        if (/^[A-Za-z0-9+/=]+$/.test(code)) {
-          code = atob(code);
-        }
-
-        log("[EXEC] " + code);
-
-        // sandbox
-        const fn = new Function(code);
-        return fn();
-      } catch (e) {
-        log("[ERROR] " + e.message);
-        return e.message;
+// tools
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "execute",
+      description: "Execute JavaScript code in browser",
+      parameters: {
+        type: "object",
+        properties: {
+          jscode: { type: "string" }
+        },
+        required: ["jscode"]
       }
     }
+  },
+  {
+    type: "web_search"
+  }
+];
 
-    const tools = [{
-      type: "function",
-      function: {
-        name: "execute",
-        description: "Execute JavaScript code in browser",
-        parameters: {
-          type: "object",
-          properties: {
-            jscode: { type: "string" }
-          },
-          required: ["jscode"]
-        }
+let running = false;
+let loadingInterval;
+
+function startLoading() {
+  let dots = 0;
+  loadingInterval = setInterval(() => {
+    dots = (dots + 1) % 4;
+    document.getElementById("rsl").innerText =
+      "Running mission" + ".".repeat(dots) + " DO NOT CLOSE TAB";
+  }, 500);
+}
+
+function stopLoading() {
+  clearInterval(loadingInterval);
+}
+
+async function create() {
+  if (running) return;
+  running = true;
+
+  const mission = document.getElementById("md").value;
+  const id = generateID();
+  location.hash = id;
+
+  log("Mission ID: " + id);
+
+  startLoading();
+
+  try {
+    const res = await puter.ai.chat(
+      `Mission: ${mission}`,
+      {
+        model: "gpt-5.4",
+        tools
       }
-    }];
+    );
 
-    async function create() {
-      const mission = document.getElementById("md").value;
-      const id = generateID();
+    const msg = res.message;
+    let resultText = "";
 
-      location.hash = id;
+    if (msg.tool_calls) {
+      let toolResults = [];
 
-      document.getElementById("rsl").innerText =
-        "Running mission... DO NOT CLOSE TAB";
-
-      log("Mission ID: " + id);
-
-      const res = await puter.ai.chat(
-        `Mission: ${mission}`,
-        { model: "gpt-5.4", tools }
-      );
-
-      const msg = res.message;
-
-      let resultText = "";
-
-      if (msg.tool_calls) {
-        const call = msg.tool_calls[0];
+      for (const call of msg.tool_calls) {
         const args = JSON.parse(call.function.arguments);
 
-        const execResult = executeCode(args.jscode);
+        let result = "";
 
-        const final = await puter.ai.chat([
-          { role: "user", content: mission },
-          msg,
-          {
-            role: "tool",
-            tool_call_id: call.id,
-            content: String(execResult)
-          }
-        ]);
+        if (call.function.name === "execute") {
+          result = executeCode(args.jscode);
+        }
 
-        resultText = final.message.content;
-      } else {
-        resultText = msg.content;
+        toolResults.push({
+          role: "tool",
+          tool_call_id: call.id,
+          content: String(result)
+        });
       }
 
-      document.getElementById("rsl").innerText = resultText;
+      const final = await puter.ai.chat([
+        {
+          role: "system",
+          content: "You are an AI named 'EtherClaw', you're based on GPT-5.4. Explain clearly what you executed."
+        },
+        { role: "user", content: mission },
+        msg,
+        ...toolResults
+      ]);
 
-      saveMission(id, {
-        mission,
-        result: resultText,
-        logs: logBox.innerHTML
-      });
+      resultText = final.message.content;
+
+    } else {
+      resultText = msg.content;
     }
 
-    // load from hash
-    window.onload = () => {
-      const id = location.hash.replace("#", "");
-      if (!id) return;
+    stopLoading();
+    document.getElementById("rsl").innerText = resultText;
 
-      const data = loadMission(id);
-      if (!data) return;
+    saveMission(id, {
+      mission,
+      result: resultText,
+      logs: logBox.innerHTML
+    });
 
-      document.getElementById("md").value = data.mission;
-      document.getElementById("rsl").innerText = data.result;
-      logBox.innerHTML = data.logs;
+  } catch (e) {
+    stopLoading();
+    log(e.message, "error");
+  }
 
-      log("Loaded mission: " + id);
-    };
-  </script>
+  running = false;
+}
+
+// load mission
+window.onload = () => {
+  const id = location.hash.replace("#", "");
+  if (!id) return;
+
+  const data = loadMission(id);
+  if (!data) return;
+
+  document.getElementById("md").value = data.mission;
+  document.getElementById("rsl").innerText = data.result;
+  logBox.innerHTML = data.logs;
+
+  log("Loaded mission: " + id);
+};
+</script>
+
 </body>
 </html>
