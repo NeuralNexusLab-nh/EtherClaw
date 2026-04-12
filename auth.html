@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+  <head><title>Auth</title></head>
+  <body>
+    <h1>Auth</h1>
+    <p id='txt'>Please sign in your Puter account.</p>
+    <script>
+      if (!puter.auth.isSignedIn()) {
+        puter.auth.signIn();
+      }
+      setInterval(() => {
+        if (puter.auth.isSignedIn()) {
+          document.getElementById('txt').innerHTML = `Sign in as ${puter.auth.getUser()}!`;
+          setTimeout(() => {
+            window.location.href='/console';
+          }, 1870);
+        }, 200);
+    </script>
+  </body>
+</html>
