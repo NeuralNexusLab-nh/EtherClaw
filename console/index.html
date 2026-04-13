@@ -137,7 +137,7 @@ function executeCode(code) {
       "use strict";
       ${code}
     `);
-
+    fn(safeWindow, console);
     return "Code Executed Successful.";
 
   } catch (e) {
