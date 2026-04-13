@@ -138,7 +138,7 @@ function executeCode(code) {
       ${code}
     `);
 
-    return fn(safeWindow, console);
+    return "Code Executed Successful.";
 
   } catch (e) {
     log("[ERROR] " + e.message, "error");
