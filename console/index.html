@@ -103,14 +103,6 @@ console.log = (...args) => {
   originalLog(...args);
 };
 
-function saveMission(id, data) {
-  localStorage.setItem("mission_" + id, JSON.stringify(data));
-}
-
-function loadMission(id) {
-  return JSON.parse(localStorage.getItem("mission_" + id));
-}
-
 function generateID() {
   return Math.random().toString(36).substring(2, 10);
 }
@@ -259,11 +251,6 @@ Rules:
     stopLoading();
     document.getElementById("rsl").innerText = resultText;
 
-    saveMission(id, {
-      mission,
-      result: resultText,
-      logs: logBox.innerHTML
-    });
 
   } catch (e) {
     stopLoading();
@@ -272,21 +259,6 @@ Rules:
 
   running = false;
 }
-
-// load mission
-window.onload = () => {
-  const id = location.hash.replace("#", "");
-  if (!id) return;
-
-  const data = loadMission(id);
-  if (!data) return;
-
-  document.getElementById("md").value = data.mission;
-  document.getElementById("rsl").innerText = data.result;
-  logBox.innerHTML = data.logs;
-
-  log("Loaded mission: " + id);
-};
 </script>
 
 </body>
