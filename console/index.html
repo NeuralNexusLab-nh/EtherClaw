@@ -83,9 +83,7 @@ button:hover {
 <div id="rsl"></div>
 
 <script>
-if (!puter.auth.isSignedIn()) {
-  location.href = '/auth.html';
-}
+puter.auth.signIn({"attempt_temp_user_creation" : true})
 
 const logBox = document.getElementById("console");
 
