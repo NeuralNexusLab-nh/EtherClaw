@@ -1,0 +1,561 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body, :host { font-family: 'Courier New', monospace; }
+  #app {
+    background: #06080d;
+    color: #c8ffd4;
+    min-height: 100vh;
+    padding: 24px;
+    font-family: 'Courier New', monospace;
+  }
+  .header { margin-bottom: 20px; }
+  .header h1 {
+    font-size: 22px;
+    color: #39ff8a;
+    letter-spacing: 2px;
+    font-weight: 700;
+    text-shadow: 0 0 8px #39ff8a55;
+  }
+  .header .subtitle {
+    font-size: 12px;
+    color: #4aff8888;
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+  .topbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .btn {
+    background: transparent;
+    border: 1px solid #39ff8a55;
+    color: #39ff8a;
+    padding: 6px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+  .btn:hover { background: #39ff8a22; border-color: #39ff8a; }
+  .btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .btn.danger { border-color: #ff4d6d55; color: #ff4d6d; }
+  .btn.danger:hover { background: #ff4d6d22; border-color: #ff4d6d; }
+  .mission-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    align-items: stretch;
+  }
+  #md {
+    flex: 1;
+    background: #0a0f1a;
+    border: 1px solid #39ff8a44;
+    color: #c8ffd4;
+    padding: 10px 14px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #md:focus { border-color: #39ff8a; }
+  #md::placeholder { color: #39ff8a33; }
+  .settings-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .setting-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #39ff8a88;
+  }
+  .setting-item input[type=number], .setting-item select {
+    background: #0a0f1a;
+    border: 1px solid #39ff8a33;
+    color: #c8ffd4;
+    padding: 4px 8px;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    width: 60px;
+    outline: none;
+  }
+  .setting-item select { width: auto; }
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  @media (max-width: 700px) { .panels { grid-template-columns: 1fr; } }
+  .panel {
+    border: 1px solid #39ff8a22;
+    background: #080c14;
+  }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid #39ff8a18;
+    font-size: 11px;
+    color: #39ff8a66;
+    letter-spacing: 1px;
+  }
+  .panel-header .badge {
+    background: #39ff8a18;
+    color: #39ff8a;
+    padding: 2px 8px;
+    font-size: 10px;
+    border-radius: 2px;
+  }
+  .panel-header .badge.running { background: #ffaa0018; color: #ffaa00; animation: pulse 1s infinite; }
+  .panel-header .badge.fail { background: #ff4d6d18; color: #ff4d6d; }
+  .panel-header .badge.done { background: #39ff8a18; color: #39ff8a; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .console-box {
+    height: 260px;
+    overflow-y: auto;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.7;
+    scrollbar-width: thin;
+    scrollbar-color: #39ff8a22 transparent;
+  }
+  .log-info { color: #39ff8a; }
+  .log-exec { color: #00aaff; }
+  .log-error { color: #ff4d6d; }
+  .log-warn { color: #ffaa00; }
+  .log-retry { color: #ff8800; font-weight: bold; }
+  .log-success { color: #39ff8a; font-weight: bold; }
+  .log-plan { color: #cc88ff; }
+  .log-dim { color: #39ff8a44; }
+  .result-box {
+    min-height: 120px;
+    max-height: 260px;
+    overflow-y: auto;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    color: #c8ffd4;
+    scrollbar-width: thin;
+    scrollbar-color: #39ff8a22 transparent;
+  }
+  .attempt-track {
+    padding: 10px 12px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    min-height: 40px;
+    align-items: center;
+  }
+  .attempt-dot {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    border-radius: 2px;
+    border: 1px solid #39ff8a33;
+    color: #39ff8a66;
+    transition: all 0.3s;
+  }
+  .attempt-dot.running { border-color: #ffaa00; color: #ffaa00; animation: pulse 0.8s infinite; }
+  .attempt-dot.fail { background: #ff4d6d22; border-color: #ff4d6d; color: #ff4d6d; }
+  .attempt-dot.pass { background: #39ff8a22; border-color: #39ff8a; color: #39ff8a; }
+  .status-bar {
+    border-top: 1px solid #39ff8a18;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #39ff8a55;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .status-bar .stat { display: flex; align-items: center; gap: 6px; }
+  .stat-val { color: #39ff8a; font-weight: bold; }
+  .cursor { display: inline-block; width: 8px; height: 14px; background: #39ff8a; animation: blink 1s step-end infinite; vertical-align: middle; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+  .thinking-bar {
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #39ff8a, transparent);
+    background-size: 200% 100%;
+    animation: sweep 1.5s linear infinite;
+    margin: 0;
+    display: none;
+  }
+  .thinking-bar.active { display: block; }
+  @keyframes sweep { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+</style>
+
+<div id="app">
+  <div class="header">
+    <h1>◈ OPENCLAW</h1>
+    <div class="subtitle">agentic mission executor — retries until done or exhausted</div>
+  </div>
+
+  <div class="topbar">
+    <button class="btn" onclick="clearAll()">[ CLEAR ]</button>
+    <button class="btn danger" id="stopBtn" onclick="stopMission()" disabled>[ STOP ]</button>
+  </div>
+
+  <div class="mission-row">
+    <input id="md" placeholder="Enter mission... (e.g. search for today's top AI news and summarize it)" />
+    <button class="btn" id="execBtn" onclick="create()">[ EXECUTE ]</button>
+  </div>
+
+  <div class="settings-row">
+    <div class="setting-item">
+      MAX RETRIES
+      <input type="number" id="maxRetries" value="5" min="1" max="10" />
+    </div>
+    <div class="setting-item">
+      MODEL
+      <select id="modelSel">
+        <option value="gpt-4o">gpt-4o</option>
+        <option value="gpt-4o-mini">gpt-4o-mini</option>
+        <option value="claude-sonnet-4-5" selected>claude-sonnet-4-5</option>
+        <option value="claude-opus-4-5">claude-opus-4-5</option>
+        <option value="o3-mini">o3-mini</option>
+      </select>
+    </div>
+    <div class="setting-item">
+      STRATEGY
+      <select id="stratSel">
+        <option value="retry">Retry on fail</option>
+        <option value="refine" selected>Refine on fail</option>
+        <option value="replan">Re-plan on fail</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="thinking-bar" id="thinkBar"></div>
+
+  <div class="panels">
+    <div class="panel">
+      <div class="panel-header">
+        AGENT LOG
+        <span class="badge" id="statusBadge">IDLE</span>
+      </div>
+      <div class="console-box" id="console"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        RESULT
+        <span id="attemptCount" style="font-size:10px;color:#39ff8a44;">attempt 0/0</span>
+      </div>
+      <div class="result-box" id="rsl">Waiting for mission...<span class="cursor"></span></div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-bottom:12px;">
+    <div class="panel-header">ATTEMPT HISTORY</div>
+    <div class="attempt-track" id="attemptTrack"></div>
+  </div>
+
+  <div class="status-bar">
+    <div class="stat">MISSION <span class="stat-val" id="statMission">—</span></div>
+    <div class="stat">ATTEMPTS <span class="stat-val" id="statAttempts">0</span></div>
+    <div class="stat">SUCCESS <span class="stat-val" id="statSuccess">—</span></div>
+    <div class="stat">TIME <span class="stat-val" id="statTime">0.0s</span></div>
+  </div>
+</div>
+
+<script>
+let running = false;
+let shouldStop = false;
+let startTime = 0;
+let timerInterval = null;
+let attemptDots = [];
+
+const logBox = document.getElementById('console');
+const rslBox = document.getElementById('rsl');
+
+function log(msg, type='info') {
+  const line = document.createElement('div');
+  line.className = 'log-' + type;
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  line.textContent = `[${ts}] ${msg}`;
+  logBox.appendChild(line);
+  logBox.scrollTop = logBox.scrollHeight;
+}
+
+function setResult(text) {
+  rslBox.textContent = text;
+}
+
+function clearAll() {
+  logBox.innerHTML = '';
+  rslBox.textContent = 'Waiting for mission...\u{25AE}';
+  document.getElementById('attemptTrack').innerHTML = '';
+  attemptDots = [];
+  setStatus('IDLE');
+  document.getElementById('statMission').textContent = '—';
+  document.getElementById('statAttempts').textContent = '0';
+  document.getElementById('statSuccess').textContent = '—';
+  document.getElementById('statTime').textContent = '0.0s';
+  document.getElementById('attemptCount').textContent = 'attempt 0/0';
+}
+
+function setStatus(s) {
+  const badge = document.getElementById('statusBadge');
+  badge.textContent = s;
+  badge.className = 'badge';
+  if (s === 'RUNNING') badge.classList.add('running');
+  else if (s === 'FAILED') badge.classList.add('fail');
+  else if (s === 'DONE') badge.classList.add('done');
+}
+
+function addAttemptDot(index) {
+  const dot = document.createElement('div');
+  dot.className = 'attempt-dot running';
+  dot.textContent = index;
+  dot.title = 'Attempt ' + index;
+  document.getElementById('attemptTrack').appendChild(dot);
+  attemptDots.push(dot);
+  return dot;
+}
+
+function markDot(dot, success) {
+  dot.className = 'attempt-dot ' + (success ? 'pass' : 'fail');
+  dot.textContent = success ? '✓' : '✗';
+}
+
+function startTimer() {
+  startTime = Date.now();
+  timerInterval = setInterval(() => {
+    const s = ((Date.now() - startTime) / 1000).toFixed(1);
+    document.getElementById('statTime').textContent = s + 's';
+  }, 100);
+}
+
+function stopTimer() { clearInterval(timerInterval); }
+
+function stopMission() {
+  shouldStop = true;
+  log('Stop requested by user.', 'warn');
+}
+
+function setThinking(on) {
+  document.getElementById('thinkBar').className = 'thinking-bar' + (on ? ' active' : '');
+}
+
+function executeCode(code) {
+  try {
+    if (/^[A-Za-z0-9+/=]+$/.test(code.trim())) {
+      try { code = atob(code.trim()); } catch(e) {}
+    }
+    log('[CODE] ' + code.slice(0, 120) + (code.length > 120 ? '...' : ''), 'exec');
+    const fn = new Function('console', '"use strict";\n' + code);
+    const out = [];
+    const fakeConsole = { log: (...a) => { out.push(a.join(' ')); log('[stdout] ' + a.join(' '), 'dim'); } };
+    fn(fakeConsole);
+    return out.length ? out.join('\n') : 'Code executed successfully.';
+  } catch(e) {
+    log('[EXEC ERROR] ' + e.message, 'error');
+    return 'ERROR: ' + e.message;
+  }
+}
+
+const tools = [
+  {
+    type: 'function',
+    function: {
+      name: 'execute',
+      description: 'Execute JavaScript code in the browser environment. Use for calculations, data processing, or logic.',
+      parameters: {
+        type: 'object',
+        properties: {
+          jscode: { type: 'string', description: 'JavaScript code to execute' }
+        },
+        required: ['jscode']
+      }
+    }
+  },
+  { type: 'web_search_20250305', name: 'web_search' }
+];
+
+function buildSystemPrompt(strategy, attempt, maxAttempts, previousErrors) {
+  const strategies = {
+    retry: `If you fail or get an error, retry the same approach more carefully.`,
+    refine: `If you fail, analyze what went wrong and refine your approach before trying again. Each attempt should improve on the last.`,
+    replan: `If you fail, completely rethink your strategy. Avoid all previous approaches. Try a fundamentally different method.`
+  };
+  const errSection = previousErrors.length
+    ? `\nPrevious attempt errors:\n${previousErrors.map((e,i)=>`  Attempt ${i+1}: ${e}`).join('\n')}\n`
+    : '';
+  return `You are OpenClaw, an agentic AI executor.
+This is attempt ${attempt} of ${maxAttempts}.
+Strategy: ${strategies[strategy]}
+${errSection}
+Rules:
+- Always use tools to accomplish tasks — never just explain.
+- If a task needs web search, use web_search. If it needs code, use execute.
+- Be precise. Return clear results.
+- If the task is ambiguous, make reasonable assumptions and proceed.
+- Do NOT give up. Try your best.`;
+}
+
+async function runAttempt(mission, attempt, maxAttempts, strategy, history, previousErrors) {
+  const model = document.getElementById('modelSel').value;
+  const sysPrompt = buildSystemPrompt(strategy, attempt, maxAttempts, previousErrors);
+
+  const messages = [
+    { role: 'system', content: sysPrompt },
+    ...history,
+    { role: 'user', content: mission }
+  ];
+
+  const res = await puter.ai.chat(messages, {
+    model,
+    tools,
+    tool_choice: 'auto'
+  });
+
+  const msg = res.message;
+  let toolResults = [];
+
+  if (msg.tool_calls && msg.tool_calls.length > 0) {
+    for (const call of msg.tool_calls) {
+      log(`[TOOL] calling ${call.function.name}`, 'plan');
+      let result = '';
+      const args = JSON.parse(call.function.arguments || '{}');
+      if (call.function.name === 'execute') {
+        result = executeCode(args.jscode);
+      } else {
+        result = '[web_search handled by model]';
+      }
+      toolResults.push({
+        role: 'tool',
+        tool_call_id: call.id,
+        content: String(result)
+      });
+      log(`[TOOL RESULT] ${String(result).slice(0, 120)}`, 'dim');
+    }
+
+    const followUp = await puter.ai.chat([
+      { role: 'system', content: 'You are OpenClaw. Summarize the result of your actions clearly and concisely. State what was accomplished.' },
+      { role: 'user', content: mission },
+      msg,
+      ...toolResults
+    ], { model });
+
+    return { success: true, text: followUp.message.content, error: null, usedTools: true };
+  } else {
+    const text = msg.content || '';
+    const failKeywords = ['unable to', 'cannot', 'error', 'failed', 'i don\'t', 'i cant', 'not possible'];
+    const seemsFailed = failKeywords.some(k => text.toLowerCase().includes(k));
+    if (seemsFailed && attempt < maxAttempts) {
+      return { success: false, text, error: 'Agent indicated inability without using tools.', usedTools: false };
+    }
+    return { success: true, text, error: null, usedTools: false };
+  }
+}
+
+async function create() {
+  if (running) return;
+  const mission = document.getElementById('md').value.trim();
+  if (!mission) { log('No mission entered.', 'warn'); return; }
+
+  running = true;
+  shouldStop = false;
+  document.getElementById('execBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+  document.getElementById('attemptTrack').innerHTML = '';
+  attemptDots = [];
+
+  const maxRetries = Math.max(1, parseInt(document.getElementById('maxRetries').value) || 5);
+  const strategy = document.getElementById('stratSel').value;
+
+  setStatus('RUNNING');
+  setThinking(true);
+  startTimer();
+
+  document.getElementById('statMission').textContent = mission.slice(0, 30) + (mission.length > 30 ? '...' : '');
+  document.getElementById('statSuccess').textContent = '—';
+
+  log('═══════════════════════════════', 'dim');
+  log(`MISSION: ${mission}`, 'info');
+  log(`STRATEGY: ${strategy} | MAX ATTEMPTS: ${maxRetries}`, 'plan');
+  log('═══════════════════════════════', 'dim');
+
+  let previousErrors = [];
+  let lastResult = '';
+  let succeeded = false;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    if (shouldStop) {
+      log('Mission aborted by user.', 'warn');
+      setResult('Mission stopped by user.\n\nLast result:\n' + lastResult);
+      setStatus('FAILED');
+      break;
+    }
+
+    document.getElementById('statAttempts').textContent = attempt;
+    document.getElementById('attemptCount').textContent = `attempt ${attempt}/${maxRetries}`;
+    const dot = addAttemptDot(attempt);
+
+    log(`▶ ATTEMPT ${attempt}/${maxRetries}`, 'retry');
+    setResult(`Running attempt ${attempt}/${maxRetries}...\n\nPrevious attempts: ${attempt - 1} failed.`);
+
+    try {
+      const result = await runAttempt(mission, attempt, maxRetries, strategy, [], previousErrors);
+      lastResult = result.text;
+
+      if (result.success) {
+        markDot(dot, true);
+        log(`✓ ATTEMPT ${attempt} SUCCEEDED`, 'success');
+        setResult(result.text);
+        setStatus('DONE');
+        document.getElementById('statSuccess').textContent = 'YES';
+        succeeded = true;
+        break;
+      } else {
+        markDot(dot, false);
+        previousErrors.push(result.error || 'Unknown failure');
+        log(`✗ ATTEMPT ${attempt} FAILED: ${result.error}`, 'error');
+        if (attempt < maxRetries) {
+          const wait = 800 + attempt * 400;
+          log(`↻ Retrying in ${(wait/1000).toFixed(1)}s...`, 'warn');
+          setResult(`Attempt ${attempt} failed. Retrying...\n\nError: ${result.error}\n\nPartial output:\n${result.text}`);
+          await new Promise(r => setTimeout(r, wait));
+        }
+      }
+    } catch(e) {
+      markDot(dot, false);
+      previousErrors.push(e.message);
+      log(`✗ ATTEMPT ${attempt} ERROR: ${e.message}`, 'error');
+      if (attempt < maxRetries) {
+        const wait = 1000 + attempt * 500;
+        log(`↻ Retrying in ${(wait/1000).toFixed(1)}s...`, 'warn');
+        await new Promise(r => setTimeout(r, wait));
+      }
+    }
+  }
+
+  if (!succeeded && !shouldStop) {
+    log('All attempts exhausted.', 'error');
+    setStatus('FAILED');
+    document.getElementById('statSuccess').textContent = 'NO';
+    setResult(`Mission failed after ${maxRetries} attempt(s).\n\nLast output:\n${lastResult}`);
+  }
+
+  log('═══════════════════════════════', 'dim');
+  stopTimer();
+  setThinking(false);
+  running = false;
+  document.getElementById('execBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+}
+</script>
